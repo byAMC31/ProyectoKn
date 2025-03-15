@@ -1,0 +1,8 @@
+# Node.js
+backend/node_modules/
+
+# Archivos de entorno
+backend/.env
+
+# Archivos de configuración del IDE
+.vscode/
