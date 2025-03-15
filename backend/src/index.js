@@ -49,7 +49,7 @@ const dbConnection = async () => {
     console.log('Database online');
     
     // Sincronizar las tablas con la base de datos
-    await sequelize.sync({ force: true }); // `force: true` borra y recrea las tablas
+    await sequelize.sync({ force: false }); // `force: true` borra y recrea las tablas
     console.log('Tablas sincronizadas exitosamente');
   } catch (error) {
     console.error('Error al conectar o sincronizar la base de datos:', error);
