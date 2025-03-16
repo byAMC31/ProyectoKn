@@ -1,4 +1,4 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -17,16 +17,17 @@ app.use(cors());
 app.use(express.json());
 
 
-app.use(helmet({  // Aplica Helmet como middleware para mejorar la seguridad HTTP.
-    contentSecurityPolicy: {  // Configura la Política de Seguridad de Contenido (CSP).
-        directives: {  // Define las reglas de seguridad para los recursos cargados en la aplicación.
-            defaultSrc: ["'self'"],  // Solo permite cargar contenido desde el mismo dominio (previene inyecciones de contenido externo).
-            scriptSrc: ["'self'"],  // Restringe la ejecución de scripts solo a los alojados en el mismo dominio (bloquea scripts externos maliciosos).
-            objectSrc: ["'none'"],  // Bloquea la carga de contenido en `<object>`, `<embed>` y `<applet>` (previene ataques como clickjacking).
-            upgradeInsecureRequests: [],  // Si el usuario accede por HTTP, intenta redirigir automáticamente a HTTPS.
-        },
+// Aplicación de Helmet como middleware para mejorar la seguridad HTTP.
+app.use(helmet({  
+  contentSecurityPolicy: {  // Configura la Política de Seguridad de Contenido (CSP).
+    directives: {  // Define las reglas de seguridad para los recursos cargados en la aplicación.
+      defaultSrc: ["'self'"],  // Solo permite cargar contenido desde el mismo dominio (previene inyecciones de contenido externo).
+      scriptSrc: ["'self'"],  // Restringe la ejecución de scripts solo a los alojados en el mismo dominio (bloquea scripts externos maliciosos).
+      objectSrc: ["'none'"],  // Bloquea la carga de contenido en `<object>`, `<embed>` y `<applet>` (previene ataques como clickjacking).
+      upgradeInsecureRequests: [],  // Si el usuario accede por HTTP, intenta redirigir automáticamente a HTTPS.
     },
-    xssFilter: true  
+  },
+  xssFilter: true
 }));
 
 
@@ -39,6 +40,10 @@ const userRoutes = require('./routes/userRoutes');
 app.use('/api/v1/users', userRoutes);
 
 
+// Ruta para el inicio de sesión
+const loginRoutes = require('./routes/loginRoutes');  // Importa las rutas de login
+app.use('/api/v1/login', loginRoutes);  // Establece la ruta para el inicio de sesión
+
 
 
 // Función para verificar la conexión a la base de datos y sincronizar las tablas
@@ -47,15 +52,17 @@ const dbConnection = async () => {
     // Verificar la conexión
     await sequelize.authenticate();
     console.log('Database online');
-    
+
     // Sincronizar las tablas con la base de datos
     await sequelize.sync({ force: false }); // `force: true` borra y recrea las tablas
     console.log('Tablas sincronizadas exitosamente');
+    
   } catch (error) {
     console.error('Error al conectar o sincronizar la base de datos:', error);
     throw new Error('No se pudo conectar a la base de datos');
   }
 };
+
 
 
 // Iniciar el servidor después de verificar la conexión a la base de datos

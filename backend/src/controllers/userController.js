@@ -111,7 +111,7 @@ const registerUser = async (req, res) => {
     if (!password) {
       errors.push('La contraseña es obligatoria.');
     } else if (!validatePassword(password)) {
-      errors.push('La contraseña no cumple con los requisitos de seguridad.');
+      errors.push('La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una minúscula, un dígito y un carácter especial.');
     }
 
     if (!firstName) {
@@ -313,5 +313,44 @@ const updateUser = async (req, res) => {
 
 
 
+//Actualiza la contraseña
+const updateUserPassword = async (req, res) => {
+  const { id } = req.params;
+  const { oldPassword, newPassword } = req.body;
 
-module.exports = { registerUser, deleteUser, updateUser, getUsers, getUserById };
+  try {
+    // Validar que la nueva contraseña tenga el formato correcto
+    if (!validatePassword(newPassword)) {
+      return res.status(400).json({ message: 'La nueva contraseña no cumple con los requisitos de seguridad.' });
+    }
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar si la contraseña actual es correcta
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'La contraseña actual es incorrecta' });
+    }
+
+    // Hashear la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar la contraseña y registrar la fecha del cambio
+    await user.update({
+      password: hashedPassword,
+      passwordChangedAt: new Date(),  // Registrar el cambio de contraseña
+    });
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error('Error al actualizar la contraseña:', error);
+    res.status(500).json({ message: 'Error al actualizar la contraseña' });
+  }
+};
+
+
+
+module.exports = { registerUser, deleteUser, updateUser, getUsers, getUserById, updateUserPassword };
