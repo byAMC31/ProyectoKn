@@ -54,7 +54,7 @@ async function startServer() {
     await seedUsers();
     // Inicia el servidor
     app.listen(PORT, () => {
-      console.log(`Servidor corriendo en http://localhost:${PORT}`);
+      console.log(`Servidor corriendo en ${urlS}`);
     });
 
   } catch (error) {
@@ -63,10 +63,11 @@ async function startServer() {
   }
 }
 
-// Inicia el servidor
-startServer();
+// Solo inicia el servidor si no está en modo de prueba
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 
-
-// Exportar la instancia de la app para las pruebas
-module.exports = app;
+// Exportar la instancia de la app y el servidor para las pruebas
+module.exports = { app, startServer };

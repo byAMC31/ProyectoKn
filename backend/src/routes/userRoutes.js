@@ -7,7 +7,7 @@ const upload = require('../middlewares/multerConfig');
 const router = express.Router();
 
 // Ruta para crear un usuario
-router.post("/", upload.single("profilePicture"), registerUser);
+router.post("/register", upload.single("profilePicture"), registerUser);
 
 // Ruta para obtener todos los usuarios
 router.get('/', validateToken, getUsers);
