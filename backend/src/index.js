@@ -4,7 +4,8 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 //const sequelize = require('./config/database'); 
-const sequelize = require('./config/database');
+const { initializeDatabase } = require('./config/database');
+const seedUsers = require('./config/userSeeder'); 
 
 // Configurar dotenv
 dotenv.config();
@@ -44,37 +45,26 @@ app.use('/api/v1/users', userRoutes);
 const loginRoutes = require('./routes/loginRoutes');  // Importa las rutas de login
 app.use('/api/v1/login', loginRoutes);  // Establece la ruta para el inicio de sesión
 
-
-
-// Función para verificar la conexión a la base de datos y sincronizar las tablas
-const dbConnection = async () => {
+// Inicializa la base de datos y luego inicia el servidor
+async function startServer() {
   try {
-    // Verificar la conexión
-    await sequelize.authenticate();
-    console.log('Database online');
+    // Inicializa la base de datos (verifica y crea si no existe)
+    await initializeDatabase();
 
-    // Sincronizar las tablas con la base de datos
-    await sequelize.sync({ force: false }); // `force: true` borra y recrea las tablas
-    console.log('Tablas sincronizadas exitosamente');
-    
-  } catch (error) {
-    console.error('Error al conectar o sincronizar la base de datos:', error);
-    throw new Error('No se pudo conectar a la base de datos');
-  }
-};
-
-
-
-// Iniciar el servidor después de verificar la conexión a la base de datos
-dbConnection()
-  .then(() => {
+    await seedUsers();
+    // Inicia el servidor
     app.listen(PORT, () => {
-      console.log(`Servidor corriendo en ${urlS}`);
+      console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
-  })
-  .catch((error) => {
-    console.error('No se pudo iniciar el servidor:', error.message);
-  });
+
+  } catch (error) {
+    console.error('Error al iniciar el servidor:', error);
+    process.exit(1); // Termina el proceso si hay un error
+  }
+}
+
+// Inicia el servidor
+startServer();
 
 
 
