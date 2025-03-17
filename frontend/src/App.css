@@ -1,0 +1,9 @@
+@import "leaflet/dist/leaflet.css";
+
+.leaflet-container {
+  width: 100% !important;
+  height: 300px !important;
+  border-radius: 10px;
+  margin-top: 10px;
+  z-index: 0; /* Para que no se sobreponga en el formulario */
+}
