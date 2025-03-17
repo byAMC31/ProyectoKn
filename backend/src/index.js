@@ -1,10 +1,11 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 //const sequelize = require('./config/database'); 
-const sequelize = require('./config/database');
+const { initializeDatabase } = require('./config/database');
+const seedUsers = require('./config/userSeeder'); 
 
 // Configurar dotenv
 dotenv.config();
@@ -17,16 +18,17 @@ app.use(cors());
 app.use(express.json());
 
 
-app.use(helmet({  // Aplica Helmet como middleware para mejorar la seguridad HTTP.
-    contentSecurityPolicy: {  // Configura la Política de Seguridad de Contenido (CSP).
-        directives: {  // Define las reglas de seguridad para los recursos cargados en la aplicación.
-            defaultSrc: ["'self'"],  // Solo permite cargar contenido desde el mismo dominio (previene inyecciones de contenido externo).
-            scriptSrc: ["'self'"],  // Restringe la ejecución de scripts solo a los alojados en el mismo dominio (bloquea scripts externos maliciosos).
-            objectSrc: ["'none'"],  // Bloquea la carga de contenido en `<object>`, `<embed>` y `<applet>` (previene ataques como clickjacking).
-            upgradeInsecureRequests: [],  // Si el usuario accede por HTTP, intenta redirigir automáticamente a HTTPS.
-        },
+// Aplicación de Helmet como middleware para mejorar la seguridad HTTP.
+app.use(helmet({  
+  contentSecurityPolicy: {  // Configura la Política de Seguridad de Contenido (CSP).
+    directives: {  // Define las reglas de seguridad para los recursos cargados en la aplicación.
+      defaultSrc: ["'self'"],  // Solo permite cargar contenido desde el mismo dominio (previene inyecciones de contenido externo).
+      scriptSrc: ["'self'"],  // Restringe la ejecución de scripts solo a los alojados en el mismo dominio (bloquea scripts externos maliciosos).
+      objectSrc: ["'none'"],  // Bloquea la carga de contenido en `<object>`, `<embed>` y `<applet>` (previene ataques como clickjacking).
+      upgradeInsecureRequests: [],  // Si el usuario accede por HTTP, intenta redirigir automáticamente a HTTPS.
     },
-    xssFilter: true  
+  },
+  xssFilter: true
 }));
 
 
@@ -39,37 +41,33 @@ const userRoutes = require('./routes/userRoutes');
 app.use('/api/v1/users', userRoutes);
 
 
+// Ruta para el inicio de sesión
+const loginRoutes = require('./routes/loginRoutes');  // Importa las rutas de login
+app.use('/api/v1/login', loginRoutes);  // Establece la ruta para el inicio de sesión
 
-
-// Función para verificar la conexión a la base de datos y sincronizar las tablas
-const dbConnection = async () => {
+// Inicializa la base de datos y luego inicia el servidor
+async function startServer() {
   try {
-    // Verificar la conexión
-    await sequelize.authenticate();
-    console.log('Database online');
-    
-    // Sincronizar las tablas con la base de datos
-    await sequelize.sync({ force: true }); // `force: true` borra y recrea las tablas
-    console.log('Tablas sincronizadas exitosamente');
-  } catch (error) {
-    console.error('Error al conectar o sincronizar la base de datos:', error);
-    throw new Error('No se pudo conectar a la base de datos');
-  }
-};
+    // Inicializa la base de datos (verifica y crea si no existe)
+    await initializeDatabase();
 
-
-// Iniciar el servidor después de verificar la conexión a la base de datos
-dbConnection()
-  .then(() => {
+    await seedUsers();
+    // Inicia el servidor
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en ${urlS}`);
     });
-  })
-  .catch((error) => {
-    console.error('No se pudo iniciar el servidor:', error.message);
-  });
+
+  } catch (error) {
+    console.error('Error al iniciar el servidor:', error);
+    process.exit(1); // Termina el proceso si hay un error
+  }
+}
+
+// Solo inicia el servidor si no está en modo de prueba
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 
-
-// Exportar la instancia de la app para las pruebas
-module.exports = app;
+// Exportar la instancia de la app y el servidor para las pruebas
+module.exports = { app, startServer };

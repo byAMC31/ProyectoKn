@@ -1,9 +1,18 @@
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+// Asegurarse de que la carpeta 'uploads' exista, si no, crearla
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
 
 // Configuración de almacenamiento
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Carpeta donde se guardarán las imágenes
+    // Usar la ruta absoluta para la carpeta 'uploads' dentro de 'src/'
+    cb(null, uploadsDir); // Carpeta donde se guardarán las imágenes
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);

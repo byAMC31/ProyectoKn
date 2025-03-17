@@ -5,14 +5,90 @@ const { validateEmail, validatePassword } = require('../utils/validations');
 
 
 
-// Obtener todos los usuarios
-const getAllUsers = async (req, res) => {
+// Obtiene todos los users con las especificaciones
+const getUsers = async (req, res) => {
+  const { page = 1, limit = 10, role, status, search } = req.query;
+
+  // Validar valores de página y límite
+  const pageNumber = parseInt(page, 10);
+  const limitNumber = parseInt(limit, 10);
+
+  if (isNaN(pageNumber) || pageNumber <= 0) {
+    return res.status(400).json({ message: 'El número de página debe ser mayor que 0.' });
+  }
+
+  if (isNaN(limitNumber) || limitNumber <= 0) {
+    return res.status(400).json({ message: 'El límite debe ser mayor que 0.' });
+  }
+
+  const offset = (pageNumber - 1) * limitNumber;
+
   try {
-    const users = await User.findAll(); // Obtener todos los usuarios
-    res.status(200).json(users);
+    const whereConditions = {};
+
+    // Filtrar por rol si se especifica
+    if (role) {
+      whereConditions.role = role;
+    }
+
+    // Filtrar por estado si se especifica
+    if (status) {
+      whereConditions.status = status;
+    }
+
+    // Filtrar por búsqueda de nombre o correo si se especifica
+    if (search) {
+      whereConditions[Op.or] = [
+        { firstName: { [Op.iLike]: `%${search}%` } },
+        { lastName: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+
+    // Obtener usuarios con paginación, filtrado y búsqueda
+    const { count, rows } = await User.findAndCountAll({
+      where: whereConditions,
+      limit: limitNumber,
+      offset,
+    });
+
+    // Calcular el total de páginas
+    const totalPages = Math.ceil(count / limitNumber);
+
+    // Verificar si hay resultados
+    if (rows.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron usuarios que coincidan con los filtros.' });
+    }
+
+    // Responder con los datos de paginación y los usuarios encontrados
+    res.json({
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages,
+      totalUsers: count,
+      users: rows,
+    });
   } catch (error) {
     console.error('Error al obtener los usuarios:', error);
-    res.status(500).json({ message: 'Error al obtener los usuarios' });
+    res.status(500).json({ message: 'Error al obtener los usuarios', error });
+  }
+};
+
+
+
+
+// Obtener un usuario por su ID
+const getUserById = async (req, res) => {
+  const { id } = req.params;  // Obtener el ID desde los parámetros de la URL
+  try {
+    const user = await User.findByPk(id); // Buscar usuario por ID
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.status(200).json(user);  // Devolver el usuario si se encuentra
+  } catch (error) {
+    console.error('Error al obtener el usuario:', error);
+    res.status(500).json({ message: 'Error al obtener el usuario' });
   }
 };
 
@@ -25,23 +101,40 @@ const registerUser = async (req, res) => {
     const profilePicture = req.file?.path || null; // Si se subió una imagen, obtiene su ruta
     const errors = []; // Array para almacenar los errores
 
-    if (!validateEmail(email)) {
+    // Verificar que los campos requeridos estén presentes
+    if (!email) {
+      errors.push('El correo electrónico es obligatorio.');
+    } else if (!validateEmail(email)) {
       errors.push('El correo electrónico no es válido.');
     }
 
-    if (!validatePassword(password)) {
-      errors.push('La contraseña no cumple con los requisitos de seguridad.');
+    if (!password) {
+      errors.push('La contraseña es obligatoria.');
+    } else if (!validatePassword(password)) {
+      errors.push('La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una minúscula, un dígito y un carácter especial.');
+    }
+
+    if (!firstName) {
+      errors.push('El nombre es obligatorio.');
+    }
+
+    if (!lastName) {
+      errors.push('Los apellidos son obligatorios.');
+    }
+
+    if (!phoneNumber) {
+      errors.push('El número de teléfono es obligatorio.');
     }
 
     // Validar roles permitidos
     const allowedRoles = ['Admin', 'User'];
-    if (!allowedRoles.includes(role)) {
+    if (role && !allowedRoles.includes(role)) {
       errors.push('El rol especificado no es válido.');
     }
 
     // Validar estados permitidos
     const allowedStatuses = ['Active', 'Inactive'];
-    if (!allowedStatuses.includes(status)) {
+    if (status && !allowedStatuses.includes(status)) {
       errors.push('El estado especificado no es válido.');
     }
 
@@ -100,6 +193,9 @@ const registerUser = async (req, res) => {
 
 
 
+
+
+
 // Eliminar un usuario por su ID
 const deleteUser = async (req, res) => {
   const { id } = req.params;  // Obtener el ID desde los parámetros de la URL
@@ -120,4 +216,141 @@ const deleteUser = async (req, res) => {
 
 
 
-module.exports = { getAllUsers, registerUser, deleteUser};
+// Actualizar un usuario 
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { email, firstName, lastName, phoneNumber, role, status, address } = req.body;
+  const profilePicture = req.file?.path || null; // Si se subió una imagen, obtiene su ruta
+  const errors = []; // Array para almacenar los errores
+
+  try {
+    const userId = parseInt(id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: 'ID de usuario inválido' });
+    }
+
+    console.log(`Buscando usuario con ID: ${userId}`);
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      console.log('Usuario no encontrado');
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Validar email
+    if (email && !validateEmail(email)) {
+      errors.push('El correo electrónico no es válido.');
+    }
+
+    // Verificar si otro usuario ya tiene el mismo email
+    if (email && email !== user.email) {
+      console.log(`Verificando si el email ya está en uso: ${email}`);
+      const existingUserByEmail = await User.findOne({
+        where: {
+          email,
+          id: { [Op.ne]: userId }, // Excluir el usuario actual
+        },
+      });
+
+      if (existingUserByEmail) {
+        console.log('Email ya registrado por otro usuario');
+        errors.push('El email ya está registrado por otro usuario');
+      }
+    }
+
+    // Si hay errores, devolverlos todos en un solo response
+    if (errors.length > 0) {
+      return res.status(400).json({ errors });
+    }
+
+    // Crear un objeto con los campos a actualizar
+    const updateData = {};
+
+    // Solo actualizamos los campos si hay un cambio
+    if (firstName && firstName !== user.firstName) updateData.firstName = firstName;
+    if (lastName && lastName !== user.lastName) updateData.lastName = lastName;
+    if (email && email !== user.email) updateData.email = email;
+    if (phoneNumber && phoneNumber !== user.phoneNumber) updateData.phoneNumber = phoneNumber;
+    if (role && role !== user.role) updateData.role = role;
+    if (status && status !== user.status) updateData.status = status;
+    // Comparar la dirección
+    if (address) {
+      const { street, number, city, postalCode } = address;
+      const currentAddress = user.address || {};
+      if (
+        street !== currentAddress.street ||
+        number !== currentAddress.number ||
+        city !== currentAddress.city ||
+        postalCode !== currentAddress.postalCode
+      ) {
+        updateData.address = address;
+      }
+    }
+    if (profilePicture && profilePicture !== user.profilePicture) updateData.profilePicture = profilePicture;
+
+    // Verificamos si hay cambios
+    if (Object.keys(updateData).length === 0) {
+      console.log('No se realizaron cambios en el usuario');
+      return res.status(400).json({ message: 'No se realizaron cambios en el usuario' });
+    }
+
+    console.log(`Actualizando usuario ID ${userId}`);
+    const [updatedRows] = await User.update(updateData, { where: { id: userId } });
+
+    if (updatedRows === 0) {
+      console.log('No se realizaron cambios en el usuario');
+      return res.status(400).json({ message: 'No se realizaron cambios en el usuario' });
+    }
+
+    console.log('Usuario actualizado correctamente');
+    res.json({ message: 'Usuario actualizado correctamente' });
+
+  } catch (error) {
+    console.error('Error en la actualización:', error);
+    res.status(500).json({ message: 'Error al actualizar usuario', error });
+  }
+};
+
+
+
+//Actualiza la contraseña
+const updateUserPassword = async (req, res) => {
+  const { id } = req.params;
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    // Validar que la nueva contraseña tenga el formato correcto
+    if (!validatePassword(newPassword)) {
+      return res.status(400).json({ message: 'La nueva contraseña no cumple con los requisitos de seguridad.' });
+    }
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar si la contraseña actual es correcta
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'La contraseña actual es incorrecta' });
+    }
+
+    // Hashear la nueva contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar la contraseña y registrar la fecha del cambio
+    await user.update({
+      password: hashedPassword,
+      passwordChangedAt: new Date(),  // Registrar el cambio de contraseña
+    });
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error('Error al actualizar la contraseña:', error);
+    res.status(500).json({ message: 'Error al actualizar la contraseña' });
+  }
+};
+
+
+
+module.exports = { registerUser, deleteUser, updateUser, getUsers, getUserById, updateUserPassword };
