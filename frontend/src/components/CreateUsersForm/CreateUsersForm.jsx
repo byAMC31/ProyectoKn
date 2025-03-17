@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
+import Swal from "sweetalert2";
 import { Box, TextField, Button, MenuItem, Typography, Grid } from "@mui/material";
 
 export default function CreateUsersForm() {
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     firstName: "",
     lastName: "",
     email: "",
@@ -15,11 +16,12 @@ export default function CreateUsersForm() {
       street: "",
       number: "",
       city: "",
-      postalCode: ""
+      postalCode: "",
     },
-    profilePicture: null
-  });
+    profilePicture: null,
+  };
 
+  const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
 
   const validateField = (name, value) => {
@@ -67,7 +69,7 @@ export default function CreateUsersForm() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      address: { ...prev.address, [name]: value }
+      address: { ...prev.address, [name]: value },
     }));
     setErrors((prev) => ({
       ...prev,
@@ -78,40 +80,61 @@ export default function CreateUsersForm() {
   const handleFileChange = (e) => {
     setFormData((prev) => ({
       ...prev,
-      profilePicture: e.target.files[0]
+      profilePicture: e.target.files[0],
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (Object.values(errors).some((error) => error)) return;
 
-    // Crear un objeto con los datos del formulario
-    const payload = {
-      ...formData,
-      address: {
-        street: formData.address.street,
-        number: formData.address.number,
-        city: formData.address.city,
-        postalCode: formData.address.postalCode
+    if (Object.values(errors).some((error) => error)) {
+      Swal.fire("Error", "Please fix the errors before submitting.", "error");
+      return;
+    }
+
+    const data = new FormData();
+
+    Object.keys(formData).forEach((key) => {
+      if (key === "profilePicture") {
+        if (formData[key]) data.append(key, formData[key]);
+      } else if (key === "address") {
+        Object.entries(formData.address).forEach(([subKey, subValue]) => {
+          data.append(`address[${subKey}]`, subValue);
+        });
+      } else {
+        data.append(key, formData[key]);
       }
-    };
+    });
 
     try {
-      const response = await axios.post("http://localhost:5000/api/v1/users/register", payload, {
-        headers: { "Content-Type": "application/json" }, // Enviar como JSON
-      });
-      console.log(response.data); // Log response for debugging
-      alert("User registered successfully!");
+      const response = await axios.post(
+        "http://localhost:5000/api/v1/users/register",
+        data,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      Swal.fire("Success", "User registered successfully!", "success");
+      setFormData(initialFormState);
+      document.getElementById("profilePictureInput").value = "";
     } catch (error) {
-      console.error(error.response ? error.response.data : error.message);
-      alert("Error registering user: " + (error.response?.data?.message || error.message));
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Error registering user",
+        "error"
+      );
     }
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 600, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2 }}>
-      <Typography variant="h5" align="center" gutterBottom>Register User</Typography>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{ maxWidth: 600, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2 }}
+    >
+      <Typography variant="h5" align="center" gutterBottom>
+        Register User
+      </Typography>
       <Grid container spacing={2}>
         {[
           { label: "First Name", name: "firstName" },
@@ -122,7 +145,7 @@ export default function CreateUsersForm() {
           { label: "Street", name: "street", address: true },
           { label: "Number", name: "number", address: true },
           { label: "City", name: "city", address: true },
-          { label: "Postal Code", name: "postalCode", address: true }
+          { label: "Postal Code", name: "postalCode", address: true },
         ].map(({ label, name, type, address }) => (
           <Grid key={name} item xs={12} sm={6}>
             <TextField
@@ -139,23 +162,44 @@ export default function CreateUsersForm() {
           </Grid>
         ))}
         <Grid item xs={12} sm={6}>
-          <TextField select fullWidth label="Role" name="role" value={formData.role} onChange={handleChange}>
+          <TextField
+            select
+            fullWidth
+            label="Role"
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+          >
             <MenuItem value="Admin">Admin</MenuItem>
             <MenuItem value="User">User</MenuItem>
           </TextField>
         </Grid>
         <Grid item xs={12} sm={6}>
-          <TextField select fullWidth label="Status" name="status" value={formData.status} onChange={handleChange}>
+          <TextField
+            select
+            fullWidth
+            label="Status"
+            name="status"
+            value={formData.status}
+            onChange={handleChange}
+          >
             <MenuItem value="Active">Active</MenuItem>
             <MenuItem value="Inactive">Inactive</MenuItem>
           </TextField>
         </Grid>
         <Grid item xs={12}>
           <Typography variant="h6">Profile Picture</Typography>
-          <input type="file" accept="image/*" onChange={handleFileChange} />
+          <input
+            id="profilePictureInput"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
         </Grid>
         <Grid item xs={12}>
-          <Button fullWidth type="submit" variant="contained">Register</Button>
+          <Button fullWidth type="submit" variant="contained">
+            Register
+          </Button>
         </Grid>
       </Grid>
     </Box>
