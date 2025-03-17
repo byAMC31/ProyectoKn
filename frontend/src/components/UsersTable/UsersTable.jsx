@@ -98,7 +98,7 @@ const UsersTable = () => {
     ];
 
     return (
-        <Box sx={{ height: 400, width: '100%' }}>
+        <Box sx={{ height: 400, width: '100%', padding: '15px' }}>
             <Box display="flex" gap={2} mb={2}>
                 <TextField label="Search" value={search} onChange={(e) => setSearch(e.target.value)} fullWidth />
 
