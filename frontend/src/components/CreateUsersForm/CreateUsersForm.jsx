@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Box, TextField, Button, MenuItem, Typography, Grid } from "@mui/material";
+import { Box, TextField, Button, MenuItem, Typography, Grid,Divider  } from "@mui/material";
 
 export default function CreateUsersForm() {
   const initialFormState = {
@@ -128,80 +128,105 @@ export default function CreateUsersForm() {
 
   return (
     <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{ maxWidth: 600, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2 }}
-    >
-      <Typography variant="h5" align="center" gutterBottom>
-        Register User
-      </Typography>
-      <Grid container spacing={2}>
-        {[
-          { label: "First Name", name: "firstName" },
-          { label: "Last Name", name: "lastName" },
-          { label: "Email", name: "email", type: "email" },
-          { label: "Password", name: "password", type: "password" },
-          { label: "Phone Number", name: "phoneNumber" },
-          { label: "Street", name: "street", address: true },
-          { label: "Number", name: "number", address: true },
-          { label: "City", name: "city", address: true },
-          { label: "Postal Code", name: "postalCode", address: true },
-        ].map(({ label, name, type, address }) => (
-          <Grid key={name} item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label={label}
-              name={name}
-              type={type || "text"}
-              value={address ? formData.address[name] : formData[name] || ""}
-              onChange={address ? handleAddressChange : handleChange}
-              error={!!errors[name]}
-              helperText={errors[name] || ""}
-              required
-            />
-          </Grid>
-        ))}
-        <Grid item xs={12} sm={6}>
+    component="form"
+    onSubmit={handleSubmit}
+    sx={{ maxWidth: 600, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2 }}
+  >
+    <Typography variant="h5" align="center" gutterBottom>
+      Register User
+    </Typography>
+    <Grid container spacing={2}>
+      {[ 
+        { label: "First Name", name: "firstName" },
+        { label: "Last Name", name: "lastName" },
+        { label: "Email", name: "email", type: "email" },
+        { label: "Password", name: "password", type: "password" },
+        { label: "Phone Number", name: "phoneNumber" },
+      ].map(({ label, name, type }) => (
+        <Grid key={name} item xs={12} sm={6}>
           <TextField
-            select
             fullWidth
-            label="Role"
-            name="role"
-            value={formData.role}
+            label={label}
+            name={name}
+            type={type || "text"}
+            value={formData[name] || ""}
             onChange={handleChange}
-          >
-            <MenuItem value="Admin">Admin</MenuItem>
-            <MenuItem value="User">User</MenuItem>
-          </TextField>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <TextField
-            select
-            fullWidth
-            label="Status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-          >
-            <MenuItem value="Active">Active</MenuItem>
-            <MenuItem value="Inactive">Inactive</MenuItem>
-          </TextField>
-        </Grid>
-        <Grid item xs={12}>
-          <Typography variant="h6">Profile Picture</Typography>
-          <input
-            id="profilePictureInput"
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
+            error={!!errors[name]}
+            helperText={errors[name] || ""}
+            required
           />
         </Grid>
-        <Grid item xs={12}>
-          <Button fullWidth type="submit" variant="contained">
-            Register
-          </Button>
-        </Grid>
+      ))}
+   <Grid item xs={12} sm={6}>
+        <TextField
+          select
+          fullWidth
+          label="Role"
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+        >
+          <MenuItem value="Admin">Admin</MenuItem>
+          <MenuItem value="User">User</MenuItem>
+        </TextField>
       </Grid>
-    </Box>
+      <Grid item xs={12} sm={6}>
+        <TextField
+          select
+          fullWidth
+          label="Status"
+          name="status"
+          value={formData.status}
+          onChange={handleChange}
+        >
+          <MenuItem value="Active">Active</MenuItem>
+          <MenuItem value="Inactive">Inactive</MenuItem>
+        </TextField>
+      </Grid>
+      <Grid item xs={12}>
+        <Divider sx={{ my: 2 }}>
+            <Typography variant="h6">Address</Typography>
+        </Divider>
+      </Grid>
+  
+      {[ 
+        { label: "Street", name: "street" },
+        { label: "Number", name: "number" },
+        { label: "City", name: "city" },
+        { label: "Postal Code", name: "postalCode" },
+      ].map(({ label, name }) => (
+        <Grid key={name} item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label={label}
+            name={name}
+            value={formData.address[name] || ""}
+            onChange={handleAddressChange}
+            error={!!errors[name]}
+            helperText={errors[name] || ""}
+            required
+          />
+        </Grid>
+      ))}
+  
+     
+      <Grid item xs={12}>
+      <Divider sx={{ my: 2 }}>
+        <Typography variant="h6">Profile Picture</Typography>
+        </Divider>
+        <input
+          id="profilePictureInput"
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+        />
+      </Grid>
+      <Grid item xs={12}>
+        <Button fullWidth type="submit" variant="contained">
+          Register
+        </Button>
+      </Grid>
+    </Grid>
+  </Box>
   );
 }
