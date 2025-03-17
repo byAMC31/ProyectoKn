@@ -3,7 +3,8 @@ import axios from 'axios';
 import Swal from 'sweetalert2';
 import { DataGrid } from '@mui/x-data-grid';
 import { TextField, MenuItem, Select, FormControl, InputLabel, Box, CircularProgress, Button } from '@mui/material';
-import './UsersTable.css'; 
+import './UsersTable.css';
+import EditUserForm from "../EditUserForm/EditUserForm";
 
 const urlbase = "http://localhost:5000/api/v1";
 
@@ -24,17 +25,17 @@ const UsersTable = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(`${urlbase}/users`, {
-                params: { 
-                    page: paginationModel.page + 1, 
-                    limit: paginationModel.pageSize, 
-                    role, 
-                    status, 
-                    search 
+                params: {
+                    page: paginationModel.page + 1,
+                    limit: paginationModel.pageSize,
+                    role,
+                    status,
+                    search
                 },
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUsers(response.data.users);
-            setRowCount(response.data.totalUsers); 
+            setRowCount(response.data.totalUsers);
         } catch (error) {
             console.error('Error fetching users:', error);
         } finally {
@@ -75,6 +76,18 @@ const UsersTable = () => {
         });
     };
 
+
+    const [editingUser, setEditingUser] = useState(null);
+
+    const handleEditUser = (user) => {
+        setEditingUser(user);
+    };
+
+    const handleUserUpdated = () => {
+        fetchUsers(); // Refresca la lista de usuarios
+    };
+
+
     const columns = [
         { field: 'id', headerName: 'ID', flex: 1 },
         { field: 'firstName', headerName: 'Name', flex: 1 },
@@ -88,7 +101,7 @@ const UsersTable = () => {
             flex: 1,
             renderCell: (params) => (
                 <>
-                    <Button onClick={() => console.log('Edit', params.row)}>Edit</Button>
+                    <Button onClick={() => handleEditUser(params.row)}>Edit</Button>
                     <Button onClick={() => handleDeleteUser(params.row.id)} color="error">
                         Delete
                     </Button>
@@ -143,9 +156,17 @@ const UsersTable = () => {
                     onPaginationModelChange={setPaginationModel}
                     pageSizeOptions={[10, 25, 50, 100]}
                     loading={loading}
-                    className="custom-data-grid" 
+                    className="custom-data-grid"
                 />
             )}
+
+            {/* Modal de edición de usuario */}
+            <EditUserForm
+                open={!!editingUser}
+                onClose={() => setEditingUser(null)}
+                user={editingUser}
+                onUserUpdated={handleUserUpdated}
+            />
         </Box>
     );
 };

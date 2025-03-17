@@ -2,16 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Box, TextField, Button, MenuItem, Typography, Grid,Divider  } from "@mui/material";
-
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import L from "leaflet";
-
-// Ícono personalizado para el marcador
-const customMarker = new L.Icon({
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+import Map from "./Map"; 
 
 
 export default function CreateUsersForm() {
@@ -38,45 +29,7 @@ export default function CreateUsersForm() {
   const [errors, setErrors] = useState({});
   const [markerPosition, setMarkerPosition] = useState([initialFormState.address.lat, initialFormState.address.lng]);
 
-  // Función para obtener la dirección a partir de coordenadas
-  const fetchAddressFromCoords = async (lat, lng) => {
-    try {
-      const response = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-      const data = response.data;
-      
-      if (data && data.address) {
-        setFormData((prev) => ({
-          ...prev,
-          address: {
-            ...prev.address,
-            street: [data.address.road, data.address.town, data.address.village].filter(Boolean).join(", "),
-            number: data.address.house_number || "",
-            city: data.address.city  || "",
-            postalCode: data.address.postcode || "",
-            lat,
-            lng,
-          },
-        }));
-      }
-    } catch (error) {
-      console.error("Error obteniendo dirección:", error);
-    }
-  };
-
-
-  // Componente para manejar clics en el mapa
-  function LocationMarker() {
-    useMapEvents({
-      click(e) {
-        const { lat, lng } = e.latlng;
-        setMarkerPosition([lat, lng]);
-        fetchAddressFromCoords(lat, lng); // Llamamos a la función de geocodificación
-      },
-    });
-
-    return <Marker position={markerPosition} icon={customMarker} />;
-  }
-
+  
   const validateField = (name, value) => {
     const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúñÑ ]+$/;
     const phoneRegex = /^\d{10}$/;
@@ -244,11 +197,8 @@ export default function CreateUsersForm() {
 
       {/* Mapa interactivo con OpenStreetMap */}
       <Grid item xs={12}>
-          <MapContainer center={markerPosition} zoom={13} style={{ height: "300px", width: "100%", borderRadius: "10px", marginTop: "10px" }}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <LocationMarker />
-          </MapContainer>
-        </Grid>
+      <Map markerPosition={markerPosition} setMarkerPosition={setMarkerPosition} setFormData={setFormData} />
+      </Grid>
 
       {[ 
         { label: "Street", name: "street" },
@@ -270,7 +220,7 @@ export default function CreateUsersForm() {
         </Grid>
       ))}
   
-     
+
       <Grid item xs={12}>
       <Divider sx={{ my: 2 }}>
         <Typography variant="h6">Profile Picture</Typography>
