@@ -16,6 +16,7 @@
     "@mui/material": "^6.4.7",
     "@mui/x-data-grid": "^7.27.3",
     "@mui/x-data-grid-generator": "^7.27.3",
+    "@toolpad/core": "^0.13.0",
     "axios": "^1.8.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
