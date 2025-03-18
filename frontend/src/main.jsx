@@ -3,10 +3,13 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import SignInSide from './components/Login/Login'
-import Dashboard from './components/Dashboard/Dashboard'
-
+import UsersTable from './components/UsersTable/UsersTable.jsx'
+import Dashboard from './components/Dashboard/Dashboard.jsx'
+import CreateUsersForm from './components/CreateUsersForm/CreateUsersForm.jsx'
 import NotFound from './components/NotFound/NotFound'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
+
+
 
 const router = createBrowserRouter([
   //Definiciòn de path y componentes
@@ -17,7 +20,13 @@ const router = createBrowserRouter([
     path: 'login', element: <SignInSide/>
   },
   {
+    path: 'UsersTable', element: <UsersTable/>
+  },
+  {
     path: 'Dashboard', element: <Dashboard/>
+  },
+  {
+    path: 'CreateUsersForm', element: <CreateUsersForm/>
   },
   {
     path: '*', element: <NotFound/>

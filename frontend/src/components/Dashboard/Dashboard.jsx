@@ -1,126 +1,128 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { DataGrid } from '@mui/x-data-grid';
-import { TextField, MenuItem, Select, FormControl, InputLabel, Box, CircularProgress, Button } from '@mui/material';
-import './Dashboard.css'; 
+import * as React from "react";
+import { extendTheme } from "@mui/material/styles";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import LogoutIcon from "@mui/icons-material/Logout";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
+import { AppProvider } from "@toolpad/core/AppProvider";
+import { DashboardLayout } from "@toolpad/core/DashboardLayout";
+import { PageContainer } from "@toolpad/core/PageContainer";
+import UsersTable from "../UsersTable/UsersTable";
+import CreateUsersForm from "../CreateUsersForm/CreateUsersForm"; // Importa el formulario
+import { IconButton, Tooltip, Box, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import PropTypes from 'prop-types';
+import { useDemoRouter } from '@toolpad/core/internal';
 
-const UsersTable = () => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState('');
-    const [role, setRole] = useState('');
-    const [status, setStatus] = useState('');
-    const [paginationModel, setPaginationModel] = useState({
-        page: 0,
-        pageSize: 10,
-    });
-    const [rowCount, setRowCount] = useState(0);
+const demoTheme = extendTheme({
+  colorSchemes: { light: true, dark: true },
+  colorSchemeSelector: "class",
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 600,
+      md: 600,
+      lg: 1200,
+      xl: 1536,
+    },
+  },
+});
 
-
-
-    const fetchUsers = async () => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get(`http://localhost:5000/api/v1/users`, {
-                params: { 
-                    page: paginationModel.page + 1, 
-                    limit: paginationModel.pageSize, 
-                    role, 
-                    status, 
-                    search 
-                },
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setUsers(response.data.users);
-            setRowCount(response.data.totalUsers); 
-        } catch (error) {
-            console.error('Error fetching users:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-
-
-    useEffect(() => {
-        fetchUsers();
-    }, [paginationModel, role, status, search]);
-
-    const columns = [
-        { field: 'id', headerName: 'ID', flex: 1 },
-        { field: 'firstName', headerName: 'Name', flex: 1 },
-        { field: 'email', headerName: 'Email', flex: 1 },
-        { field: 'phoneNumber', headerName: 'Phone Number', flex: 1 },
-        { field: 'role', headerName: 'Role', flex: 1 },
-        { field: 'status', headerName: 'Status', flex: 1 },
-        {
-            field: 'actions',
-            headerName: 'Actions',
-            flex: 1,
-            renderCell: (params) => (
-                <>
-                    <Button onClick={() => console.log('Edit', params.row)}>Edit</Button>
-                    <Button onClick={() => console.log('Delete', params.row)} color="error">Delete</Button>
-                </>
-            )
-        }
-    ];
+function DemoPageContent({ pathname }) {
+  return (
+    <Box
+      sx={{
+        py: 4,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+      }}
+    >
+      {pathname === "/dashboard" ? <UsersTable /> : <CreateUsersForm />}
+    </Box>
+  );
+}
 
 
 
-    return (
-        <Box sx={{ height: 500, width: '100%' }}>
-            <Box display="flex" gap={2} mb={2}>
-                <TextField label="Search" value={search} onChange={(e) => setSearch(e.target.value)} fullWidth />
-
-                <FormControl fullWidth>
-                    <InputLabel id="role-label">Role</InputLabel>
-                    <Select
-                        labelId="role-label"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        label="Role"
-                    >
-                        <MenuItem value="">All</MenuItem>
-                        <MenuItem value="Admin">Admin</MenuItem>
-                        <MenuItem value="User">User</MenuItem>
-                    </Select>
-                </FormControl>
-
-                <FormControl fullWidth>
-                    <InputLabel id="status-label">Status</InputLabel>
-                    <Select
-                        labelId="status-label"
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        label="Status"
-                    >
-                        <MenuItem value="">All</MenuItem>
-                        <MenuItem value="Active">Active</MenuItem>
-                        <MenuItem value="Inactive">Inactive</MenuItem>
-                    </Select>
-                </FormControl>
-            </Box>
-
-            {loading ? (
-                <CircularProgress />
-            ) : (
-                <DataGrid
-                    rows={users}
-                    columns={columns}
-                    rowCount={rowCount}
-                    paginationMode="server"
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={setPaginationModel}
-                    pageSizeOptions={[10, 25, 50, 100]}
-                    loading={loading}
-                    className="custom-data-grid" 
-                />
-            )}
-        </Box>
-    );
+DemoPageContent.propTypes = {
+  pathname: PropTypes.string.isRequired,
 };
 
-export default UsersTable;
+
+
+
+export default function DashboardLayoutBasic(props) {
+  const { window } = props;
+  const navigate = useNavigate();
+
+  const router = useDemoRouter('/dashboard');
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+
+  const NAVIGATION = [
+    {
+      segment: "dashboard",
+      title: "Dashboard",
+      icon: <DashboardIcon />,
+    },
+    {
+      segment: "createUsersForm",
+      title: "Create Users",
+      icon: <PersonAddIcon />,
+    },
+  ];
+
+
+
+  function LogoutButton() {
+    return (
+      <Tooltip title="Cerrar sesión">
+        <Box display="flex" alignItems="center" onClick={handleLogout}>
+          <IconButton color="inherit">
+            <LogoutIcon />
+          </IconButton>
+          <Typography variant="body1" sx={{ marginLeft: 1 }}>
+            
+          </Typography>
+        </Box>
+      </Tooltip>
+    );
+  }
+
+
+  return (
+    <AppProvider
+      navigation={NAVIGATION.map((navItem) => ({
+        ...navItem,
+        onClick: () => {
+          setCurrentPage(navItem.segment);
+        },
+      }))}
+      theme={demoTheme}
+      router={router}
+      branding={{
+        title: "karimnot",
+        homeUrl: "#",
+      }}
+    >
+      <DashboardLayout
+        slots={{
+          sidebarFooter: () => <LogoutButton />,
+        }}
+      >
+         {/* <PageContainer>
+         <DemoPageContent pathname={router.pathname} />  
+        </PageContainer> */}
+        
+      <DemoPageContent pathname={router.pathname} />  
+
+
+      </DashboardLayout>
+    </AppProvider>
+  );
+}
