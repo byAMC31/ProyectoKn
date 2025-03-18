@@ -1,6 +1,6 @@
 # ProyectoKn
 
-Este documento describe cómo configurar y ejecutar el proyecto, tanto usando Docker como de forma independiente.
+Este documento proporciona instrucciones completas para configurar y ejecutar el proyecto, incluyendo los pasos necesarios para su ejecución tanto con Docker (usando Docker Compose) como de forma independiente, detallando la configuración del entorno, la base de datos y la ejecución del backend y frontend.
 
 ## Ejecución con Docker
 
@@ -83,6 +83,12 @@ Asegúrate de tener PostgreSQL instalado y accede a la conexión en pgAdmin util
    npm run dev
    ```
 4. Accede a `http://localhost:5173/` en el navegador.
+
+
+> **Nota:** Por defecto, se crea un usuario administrador con las siguientes credenciales:
+>
+> - **Email**: `admin@example.com`
+> - **Contraseña**: `password`
 
 ---
 ## Lista de librerías y frameworks utilizados
