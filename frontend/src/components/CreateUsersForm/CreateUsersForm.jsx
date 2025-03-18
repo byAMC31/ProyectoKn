@@ -100,8 +100,12 @@ export default function CreateUsersForm() {
     });
 
     try {
+      const token = localStorage.getItem("token");
       await axios.post("http://localhost:5000/api/v1/users/register", data, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: { 
+          "Content-Type": "multipart/form-data",
+           Authorization: `Bearer ${token}`,
+         },
       });
       Swal.fire("Success", "User registered successfully!", "success");
       setFormData(initialFormState);

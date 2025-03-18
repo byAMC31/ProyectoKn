@@ -12,6 +12,7 @@ import { IconButton, Tooltip, Box, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import PropTypes from 'prop-types';
 import { useDemoRouter } from '@toolpad/core/internal';
+import { useEffect } from "react";
 
 const demoTheme = extendTheme({
   colorSchemes: { light: true, dark: true },
@@ -57,6 +58,14 @@ export default function DashboardLayoutBasic(props) {
   const navigate = useNavigate();
 
   const router = useDemoRouter('/dashboard');
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    }
+  }, [navigate]);
+
 
   const handleLogout = () => {
     localStorage.removeItem("token");
