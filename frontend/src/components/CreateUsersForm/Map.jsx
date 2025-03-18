@@ -26,7 +26,7 @@ export default function Map({ markerPosition, setMarkerPosition, setFormData }) 
             ...prev.address,
             street: [data.address.road, data.address.town, data.address.village].filter(Boolean).join(", "),
             number: data.address.house_number || "",
-            city: data.address.city || "",
+            city: data.address.state_capital || data.address.city || "",
             postalCode: data.address.postcode || "",
             lat,
             lng,

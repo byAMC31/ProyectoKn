@@ -4,7 +4,8 @@ import Swal from 'sweetalert2';
 import { DataGrid } from '@mui/x-data-grid';
 import { TextField, MenuItem, Select, FormControl, InputLabel, Box, CircularProgress, Button } from '@mui/material';
 import './UsersTable.css';
-import EditUserForm from "../EditUserForm/EditUserForm";
+import EditUserForm from "../EditUser/EditUser";
+import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 
 const urlbase = "http://localhost:5000/api/v1";
 
@@ -89,12 +90,12 @@ const UsersTable = () => {
 
 
     const columns = [
-        { field: 'id', headerName: 'ID', flex: 1 },
+        { field: 'id', headerName: 'ID', flex: 0.5 },
         { field: 'firstName', headerName: 'Name', flex: 1 },
         { field: 'email', headerName: 'Email', flex: 1 },
-        { field: 'phoneNumber', headerName: 'Phone Number', flex: 1 },
-        { field: 'role', headerName: 'Role', flex: 1 },
-        { field: 'status', headerName: 'Status', flex: 1 },
+        { field: 'phoneNumber', headerName: 'Phone Number', flex: 0.8 },
+        { field: 'role', headerName: 'Role', flex: 0.5 },
+        { field: 'status', headerName: 'Status', flex: 0.5 },
         {
             field: 'actions',
             headerName: 'Actions',
@@ -160,13 +161,22 @@ const UsersTable = () => {
                 />
             )}
 
-            {/* Modal de edición de usuario */}
+{editingUser && (
+    <Dialog open={!!editingUser} onClose={() => setEditingUser(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit User</DialogTitle>
+        <DialogContent>
             <EditUserForm
-                open={!!editingUser}
-                onClose={() => setEditingUser(null)}
                 user={editingUser}
+                onClose={() => setEditingUser(null)}
                 onUserUpdated={handleUserUpdated}
             />
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => setEditingUser(null)}>Cancel</Button>
+        </DialogActions>
+    </Dialog>
+)}
+
         </Box>
     );
 };

@@ -87,7 +87,7 @@ export default function DashboardLayoutBasic(props) {
             <LogoutIcon />
           </IconButton>
           <Typography variant="body1" sx={{ marginLeft: 1 }}>
-            Logout
+            
           </Typography>
         </Box>
       </Tooltip>

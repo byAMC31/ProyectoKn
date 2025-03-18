@@ -1,9 +1,9 @@
+// CreateUsersForm.js
 import React, { useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Box, TextField, Button, MenuItem, Typography, Grid,Divider  } from "@mui/material";
-import Map from "./Map"; 
-
+import { Box, Button, Typography, Divider } from "@mui/material";
+import UserFormFields from "./UserFormFields";
 
 export default function CreateUsersForm() {
   const initialFormState = {
@@ -29,7 +29,6 @@ export default function CreateUsersForm() {
   const [errors, setErrors] = useState({});
   const [markerPosition, setMarkerPosition] = useState([initialFormState.address.lat, initialFormState.address.lng]);
 
-  
   const validateField = (name, value) => {
     const nameRegex = /^[A-Za-zÁÉÍÓÚáéíóúñÑ ]+$/;
     const phoneRegex = /^\d{10}$/;
@@ -61,33 +60,18 @@ export default function CreateUsersForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setErrors((prev) => ({
-      ...prev,
-      [name]: validateField(name, value),
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
   };
 
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      address: { ...prev.address, [name]: value },
-    }));
-    setErrors((prev) => ({
-      ...prev,
-      [name]: validateField(name, value),
-    }));
+    setFormData((prev) => ({ ...prev, address: { ...prev.address, [name]: value } }));
+    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
   };
 
   const handleFileChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      profilePicture: e.target.files[0],
-    }));
+    setFormData((prev) => ({ ...prev, profilePicture: e.target.files[0] }));
   };
 
   const handleSubmit = async (e) => {
@@ -98,146 +82,54 @@ export default function CreateUsersForm() {
       return;
     }
 
-    const data = new FormData();
+    // Excluir lat y lng antes de enviar los datos
+    const { lat, lng, ...filteredAddress } = formData.address;
+    const dataToSend = { ...formData, address: filteredAddress };
 
-    Object.keys(formData).forEach((key) => {
-      if (key === "profilePicture") {
-        if (formData[key]) data.append(key, formData[key]);
+    const data = new FormData();
+    Object.keys(dataToSend).forEach((key) => {
+      if (key === "profilePicture" && dataToSend[key]) {
+        data.append(key, dataToSend[key]);
       } else if (key === "address") {
-        Object.entries(formData.address).forEach(([subKey, subValue]) => {
+        Object.entries(dataToSend.address).forEach(([subKey, subValue]) => {
           data.append(`address[${subKey}]`, subValue);
         });
       } else {
-        data.append(key, formData[key]);
+        data.append(key, dataToSend[key]);
       }
     });
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/v1/users/register",
-        data,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+      await axios.post("http://localhost:5000/api/v1/users/register", data, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       Swal.fire("Success", "User registered successfully!", "success");
       setFormData(initialFormState);
       document.getElementById("profilePictureInput").value = "";
     } catch (error) {
-      Swal.fire(
-        "Error",
-        error.response?.data?.message || "Error registering user",
-        "error"
-      );
+      Swal.fire("Error", error.response?.data?.message || "Error registering user", "error");
     }
   };
 
+
   return (
-    <Box
-    component="form"
-    onSubmit={handleSubmit}
-    sx={{ maxWidth: 600, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2 }}
-  >
-    <Typography variant="h5" align="center" gutterBottom>
-      Register User
-    </Typography>
-    <Grid container spacing={2}>
-      {[ 
-        { label: "First Name", name: "firstName" },
-        { label: "Last Name", name: "lastName" },
-        { label: "Email", name: "email", type: "email" },
-        { label: "Password", name: "password", type: "password" },
-        { label: "Phone Number", name: "phoneNumber" },
-      ].map(({ label, name, type }) => (
-        <Grid key={name} item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            label={label}
-            name={name}
-            type={type || "text"}
-            value={formData[name] || ""}
-            onChange={handleChange}
-            error={!!errors[name]}
-            helperText={errors[name] || ""}
-            required
-          />
-        </Grid>
-      ))}
-   <Grid item xs={12} sm={6}>
-        <TextField
-          select
-          fullWidth
-          label="Role"
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-        >
-          <MenuItem value="Admin">Admin</MenuItem>
-          <MenuItem value="User">User</MenuItem>
-        </TextField>
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <TextField
-          select
-          fullWidth
-          label="Status"
-          name="status"
-          value={formData.status}
-          onChange={handleChange}
-        >
-          <MenuItem value="Active">Active</MenuItem>
-          <MenuItem value="Inactive">Inactive</MenuItem>
-        </TextField>
-      </Grid>
-      <Grid item xs={12}>
-        <Divider sx={{ my: 2 }}>
-            <Typography variant="h6">Address</Typography>
-        </Divider>
-      </Grid>
-
-      {/* Mapa interactivo con OpenStreetMap */}
-      <Grid item xs={12}>
-      <Map markerPosition={markerPosition} setMarkerPosition={setMarkerPosition} setFormData={setFormData} />
-      </Grid>
-
-      {[ 
-        { label: "Street", name: "street" },
-        { label: "Number", name: "number" },
-        { label: "City", name: "city" },
-        { label: "Postal Code", name: "postalCode" },
-      ].map(({ label, name }) => (
-        <Grid key={name} item xs={12} sm={6}>
-          <TextField
-            fullWidth
-            label={label}
-            name={name}
-            value={formData.address[name] || ""}
-            onChange={handleAddressChange}
-            error={!!errors[name]}
-            helperText={errors[name] || ""}
-            required
-          />
-        </Grid>
-      ))}
-  
-
-      <Grid item xs={12}>
+    <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 600, margin: "auto", padding: 3, boxShadow: 3, borderRadius: 2 }}>
       <Divider sx={{ my: 2 }}>
-        <Typography variant="h6">Profile Picture</Typography>
-        </Divider>
-        <input
-          id="profilePictureInput"
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <Button fullWidth type="submit" variant="contained">
-          Register
-        </Button>
-      </Grid>
-    </Grid>
-  </Box>
+        <Typography variant="h6">Create user</Typography>
+      </Divider>
+      <UserFormFields
+        formData={formData}
+        errors={errors}
+        handleChange={handleChange}
+        handleAddressChange={handleAddressChange}
+        handleFileChange={handleFileChange}
+        setMarkerPosition={setMarkerPosition}
+        setFormData={setFormData}
+      />
+      <Button fullWidth type="submit" variant="contained" sx={{ mt: 2 }}>
+        Register
+      </Button>
+
+    </Box>
   );
 }
